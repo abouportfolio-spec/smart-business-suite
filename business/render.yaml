@@ -1,0 +1,9 @@
+services:
+  - type: web
+    name: smart-business-pro
+    env: python
+    buildCommand: "./build.sh"
+    startCommand: "gunicorn ton_nom_de_projet.wsgi:application"
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.10.0
