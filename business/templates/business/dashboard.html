@@ -10,17 +10,40 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         form p label { @apply block text-xs font-bold text-slate-500 uppercase mb-1 mt-3; }
-        form p input, form p select { 
+        form p input, form p select {
             @apply w-full bg-slate-900/50 border border-slate-700 rounded-xl p-3 text-white focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 outline-none transition-all duration-300;
         }
         .custom-scrollbar::-webkit-scrollbar { width: 6px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
         .glass-card { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(12px); }
+        /* Animation de rotation lente pour l'icône IA */
+        @keyframes spin-slow {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        .animate-spin-slow {
+            animation: spin-slow 8s linear infinite;
+        }
+        /* Effet de lueur au survol pour les boutons */
+        .btn-edit-glow:hover {
+            box-shadow: 0 0 15px rgba(59, 130, 246, 0.5); /* Lueur bleue */
+            transform: translateY(-2px);
+        }
+
+        .btn-delete-glow:hover {
+            box-shadow: 0 0 15px rgba(239, 68, 68, 0.5); /* Lueur rouge */
+            transform: translateY(-2px);
+        }
+
+        .transition-all-custom {
+            transition: all 0.3s ease;
+        }
     </style>
 </head>
 <body class="bg-[#0f172a] text-slate-200 p-4 md:p-8 font-sans leading-relaxed">
-    
+
     {% if messages %}
     <div class="fixed top-5 right-5 z-50 space-y-3">
         {% for message in messages %}
@@ -85,7 +108,7 @@
                 <p class="text-emerald-500/70 text-xs font-black uppercase tracking-[0.2em] mb-2">Valeur de l'Inventaire</p>
                 <h2 class="text-5xl font-black text-white tracking-tight">{{ total_stock }} <span class="text-xl font-light text-slate-500">FCFA</span></h2>
             </div>
-            
+
             <div class="glass-card border border-blue-500/20 p-8 rounded-[2rem] shadow-2xl relative overflow-hidden group">
                 <div class="absolute -right-4 -top-4 text-blue-500/5 text-8xl -rotate-12 group-hover:rotate-0 transition-transform duration-700">
                     <i class="fas fa-box-open"></i>
@@ -120,7 +143,7 @@
                         </span>
                         Enregistrer Vente
                     </h2>
-                    
+
                     <form method="POST" class="space-y-2">
                         {% csrf_token %}
                         {% if form_v.non_field_errors %}
@@ -184,7 +207,7 @@
             <span class="w-12 h-1 bg-emerald-500 rounded-full mr-4"></span>
             Inventaire Actif
         </h3>
-        
+
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {% for produit in produits %}
             <div class="glass-card group p-8 border border-slate-800 rounded-[2.5rem] hover:border-emerald-500/30 hover:scale-[1.02] transition-all duration-500 shadow-xl relative">
@@ -193,15 +216,19 @@
                         <h2 class="text-2xl font-black text-white leading-tight mb-1">{{ produit.nom }}</h2>
                         <span class="px-3 py-1 bg-slate-900 text-slate-500 text-[10px] font-mono rounded-full border border-slate-800">REF: #{{ produit.id }}</span>
                     </div>
-                    
-                    <div class="flex gap-2">
-                        <a href="{% url 'modifier_produit' produit.id %}" class="w-10 h-10 flex items-center justify-center bg-blue-500/10 text-blue-400 hover:bg-blue-500 hover:text-white rounded-xl transition-all">
-                            <i class="fas fa-edit text-sm"></i>
-                        </a>
-                        <a href="{% url 'supprimer_produit' produit.id %}" onclick="return confirm('Confirmer la suppression ?')" class="w-10 h-10 flex items-center justify-center bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white rounded-xl transition-all">
-                            <i class="fas fa-trash-alt text-sm"></i>
-                        </a>
-                    </div>
+
+                <div class="flex gap-2">
+                    <a href="{% url 'modifier_produit' produit.id %}"
+                       class="w-10 h-10 flex items-center justify-center bg-blue-500/10 text-blue-400 rounded-xl transition-all-custom btn-edit-glow border border-blue-500/20">
+                        <i class="fas fa-edit text-sm"></i>
+                    </a>
+
+                    <a href="{% url 'supprimer_produit' produit.id %}"
+                       onclick="return confirm('Confirmer la suppression de {{ produit.nom }} ?')"
+                       class="w-10 h-10 flex items-center justify-center bg-red-500/10 text-red-500 rounded-xl transition-all-custom btn-delete-glow border border-red-500/20">
+                        <i class="fas fa-trash-alt text-sm"></i>
+                    </a>
+                </div>
                 </div>
 
                 <div class="space-y-4">
@@ -211,6 +238,36 @@
                             {{ produit.stock }}
                         </span>
                     </div>
+                    <div class="mt-2 py-2 border-t border-slate-700/30">
+                    {% with jours=produit.estimation_jours_restants %}
+                        {% if jours is None %}
+                            <div class="flex items-center gap-2 text-slate-500">
+                                <i class="fas fa-microchip text-[10px] text-emerald-300 animate-spin-slow mr-1"></i>
+                                <span class="text-[9px] uppercase font-bold tracking-widest">Analyse IA : En attente de données</span>
+                            </div>
+                        {% elif jours == 0 %}
+                            <div class="flex items-center gap-2 text-red-500">
+                                <i class="fas fa-exclamation-circle text-[10px]"></i>
+                                <span class="text-[9px] uppercase font-bold tracking-widest">IA : Rupture de stock immédiate</span>
+                            </div>
+                        {% elif jours <= 2 %}
+                            <div class="flex items-center gap-2 text-red-400 animate-pulse">
+                                <i class="fas fa-exclamation-triangle text-[10px]"></i>
+                                <span class="text-[9px] uppercase font-bold tracking-widest">Critique : Rupture sous {{ jours }}j</span>
+                            </div>
+                        {% elif jours <= 5 %}
+                            <div class="flex items-center gap-2 text-yellow-500">
+                                <i class="fas fa-clock text-[10px]"></i>
+                                <span class="text-[9px] uppercase font-bold tracking-widest">Alerte : Rupture sous {{ jours }}j</span>
+                            </div>
+                        {% else %}
+                            <div class="flex items-center gap-2 text-emerald-400">
+                                <i class="fas fa-check-circle text-[10px]"></i>
+                                <span class="text-[9px] uppercase font-bold tracking-widest">IA : Stock Optimisé ({{ jours }}j)</span>
+                            </div>
+                        {% endif %}
+                    {% endwith %}
+                </div>
                     <div class="flex items-baseline gap-2">
                         <span class="text-3xl font-black text-white tracking-tighter">{{ produit.prix_vente }}</span>
                         <span class="text-xs font-bold text-slate-600 uppercase">FCFA</span>
@@ -264,7 +321,7 @@
                     message.style.opacity = "0";
                     message.style.transform = "translateX(20px)";
                     setTimeout(() => message.remove(), 500);
-                }, 4000); 
+                }, 4000);
             });
         });
     </script>

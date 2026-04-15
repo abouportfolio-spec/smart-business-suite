@@ -6,9 +6,11 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 # --- SÉCURITÉ ---
 SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-8vux^m90h)kf2vb+zn2j_7sfsl#jqmo_a5fb7-%p%fy=3zb*e)')
-DEBUG = 'RENDER' not in os.environ # False sur Render, True en local
 
-ALLOWED_HOSTS = ['127.0.0.1', 'localhost']
+# Cette ligne passe DEBUG à False si on est sur PythonAnywhere OU Render
+DEBUG = not any(env in os.environ for env in ['RENDER', 'PYTHONANYWHERE_DOMAIN'])
+
+ALLOWED_HOSTS = ['abtoure.pythonanywhere.com', '127.0.0.1', 'localhost']
 render_external_url = os.environ.get('RENDER_EXTERNAL_HOSTNAME')
 if render_external_url:
     ALLOWED_HOSTS.append(render_external_url)
